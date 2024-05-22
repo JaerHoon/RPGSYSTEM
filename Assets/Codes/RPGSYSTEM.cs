@@ -512,14 +512,14 @@ namespace RPGSYSTEM
     }
 
 
-    public class BuffDebuff
+    public class Buff
     {
         public Enums.BuffDebuffType buffDebuffType;
         public float duration;  // 버프시간
         public float checkduration; // 버프중 도트 시간
         public int buffPow; //버프파워
        
-        public BuffDebuff(float time, float checktime, int pow)
+        public Buff(float time, float checktime, int pow)
         {
             duration = time;
             checkduration = checktime;

@@ -128,55 +128,55 @@ namespace RPGSYSTEM.PlayableCharacter
     public class CharacterBuffDebuff : MonoBehaviour
     {
         [SerializeField]
-        protected List<BuffDebuff> buffDebuffs = new List<BuffDebuff>();
-        protected List<BuffDebuff> Ativebuffs = new List<BuffDebuff>();
-        protected List<BuffDebuff> AtiveDebuffs = new List<BuffDebuff>();
+        protected List<Buff> buffs = new List<Buff>();
+        protected List<Buff> Ativebuffs = new List<Buff>();
+        protected List<Buff> AtiveDebuffs = new List<Buff>();
        
-        public virtual void OnBuff(BuffDebuff buffDebuff)
+        public virtual void OnBuff(Buff buff)
         {
             //버프 타입에 따라서 버프를 생성해서 버프 리스트에 넣는다.
-           StartCoroutine(buffing(buffDebuff));
+           StartCoroutine(buffing(buff));
         }
 
-        protected virtual IEnumerator buffing(BuffDebuff buffDebuff)
+        protected virtual IEnumerator buffing(Buff buff)
         {
-            buffDebuff.OnBuff();
-            OnUI(buffDebuff);
+            buff.OnBuff();
+            OnUI(buff);
             float time=0;
-            float nextCheckTime = buffDebuff.checkduration;
+            float nextCheckTime = buff.checkduration;
 
 
-            while (time < buffDebuff.duration)
+            while (time < buff.duration)
             {
                 time += Time.deltaTime;
 
                 if (time >= nextCheckTime)
                 {
-                    buffDebuff.CheckBuff();
-                    UpDateUI(buffDebuff);
-                    nextCheckTime += buffDebuff.checkduration;
+                    buff.CheckBuff();
+                    UpDateUI(buff);
+                    nextCheckTime += buff.checkduration;
                 }
 
                 yield return new WaitForFixedUpdate();
             }
 
-            buffDebuff.OffBuff();
+            buff.OffBuff();
             //액티브 리스트에서 이 버프를 제거한다.
-            OffUI(buffDebuff);
+            OffUI(buff);
         }
 
-        protected virtual void OnUI(BuffDebuff buffDebuff)
+        protected virtual void OnUI(Buff buff)
         {
             //버프 UI활성화
            // UIBuffDebuffs[(int)buffDebuff.buffDebuffType].SetActive(true);
         }
 
-        protected virtual void UpDateUI(BuffDebuff buffDebuff)
+        protected virtual void UpDateUI(Buff buff)
         {
             //UI업데이트
         }
 
-        protected virtual void OffUI(BuffDebuff buffDebuff)
+        protected virtual void OffUI(Buff buff)
         {  //버프 UI 비활성화
           //  UIBuffDebuffs[(int)buffDebuff.buffDebuffType].SetActive(false);
         }
