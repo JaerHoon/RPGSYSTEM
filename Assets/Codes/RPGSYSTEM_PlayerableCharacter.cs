@@ -114,7 +114,7 @@ namespace RPGSYSTEM.PlayableCharacter
             //회피계산, 방어계산등등
         }
 
-        public virtual void ContinuosDamage(int pow, float duration)
+        public virtual void ContinuosDamage(int pow, float duration,float damageTime)
         {
             //아마 코루틴을 만들어야 할 듯.
         }
@@ -127,6 +127,58 @@ namespace RPGSYSTEM.PlayableCharacter
    
     public class CharacterBuffDebuff : MonoBehaviour
     {
+        [SerializeField]
+        protected List<BuffDebuff> buffDebuffs = new List<BuffDebuff>();
+        protected List<BuffDebuff> Ativebuffs = new List<BuffDebuff>();
+        protected List<BuffDebuff> AtiveDebuffs = new List<BuffDebuff>();
+       
+        public virtual void OnBuff(BuffDebuff buffDebuff)
+        {
+            //버프 타입에 따라서 버프를 생성해서 버프 리스트에 넣는다.
+           StartCoroutine(buffing(buffDebuff));
+        }
 
+        protected virtual IEnumerator buffing(BuffDebuff buffDebuff)
+        {
+            buffDebuff.OnBuff();
+            OnUI(buffDebuff);
+            float time=0;
+            float nextCheckTime = buffDebuff.checkduration;
+
+
+            while (time < buffDebuff.duration)
+            {
+                time += Time.deltaTime;
+
+                if (time >= nextCheckTime)
+                {
+                    buffDebuff.CheckBuff();
+                    UpDateUI(buffDebuff);
+                    nextCheckTime += buffDebuff.checkduration;
+                }
+
+                yield return new WaitForFixedUpdate();
+            }
+
+            buffDebuff.OffBuff();
+            //액티브 리스트에서 이 버프를 제거한다.
+            OffUI(buffDebuff);
+        }
+
+        protected virtual void OnUI(BuffDebuff buffDebuff)
+        {
+            //버프 UI활성화
+           // UIBuffDebuffs[(int)buffDebuff.buffDebuffType].SetActive(true);
+        }
+
+        protected virtual void UpDateUI(BuffDebuff buffDebuff)
+        {
+            //UI업데이트
+        }
+
+        protected virtual void OffUI(BuffDebuff buffDebuff)
+        {  //버프 UI 비활성화
+          //  UIBuffDebuffs[(int)buffDebuff.buffDebuffType].SetActive(false);
+        }
     }
 }

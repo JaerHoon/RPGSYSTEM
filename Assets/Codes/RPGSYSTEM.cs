@@ -282,7 +282,7 @@ namespace RPGSYSTEM
             //스킬타입 인터페이스에 따라서 함수를 호출해준다.
         }
 
-        public virtual T GetSkillPow<T>()// 스킬파워를 반환해주는 함수
+        public virtual T GetSkillPow<T>()// 레벨에 따라서 스킬파워를 반환해주는 함수
         {
             int a = Cal.CalSkillpow(skillData, skillLv);
 
@@ -512,6 +512,37 @@ namespace RPGSYSTEM
     }
 
 
+    public class BuffDebuff
+    {
+        public Enums.BuffDebuffType buffDebuffType;
+        public float duration;  // 버프시간
+        public float checkduration; // 버프중 도트 시간
+        public int buffPow; //버프파워
+       
+        public BuffDebuff(float time, float checktime, int pow)
+        {
+            duration = time;
+            checkduration = checktime;
+            buffPow = pow;
+        }
+
+        public virtual void OnBuff()
+        {
+           
+        }
+
+        public virtual void CheckBuff()
+        {
+
+        }
+
+        public virtual void OffBuff()
+        {
+           
+        }
+        
+    }
+
 
     public class Nums
     {
@@ -533,12 +564,15 @@ namespace RPGSYSTEM
 
     public class Enums
     {
+    
         public enum EquipmentType { Weapon, Amor }
         public enum SkillType { Ation,Passive,Condtion, BuffDebuff}
 
         public enum SkillConditionType { Attack, Dffence}
        
         public enum BuffDebuffType { buff, debuff}
+
+        public enum BuffDebuffStat { Ready, Active }
     }
 
     public abstract class CharacterData { }
@@ -553,6 +587,7 @@ namespace RPGSYSTEM
 
     public abstract class EquipmentData { }
     
+    public abstract class BuffDebuffData { }
 
     
 
