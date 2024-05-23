@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using RPGSYSTEM.UI;
 
 namespace RPGSYSTEM
 {
@@ -573,6 +574,13 @@ namespace RPGSYSTEM
         public enum BuffDebuffType { buff, debuff}
 
         public enum BuffDebuffStat { Ready, Active }
+
+        public enum UIType { Slots, Buttons, Infos}
+    }
+
+    public class Types
+    {
+        public static Type[] type = new Type[] { typeof(Slots), typeof(Buttons) };
     }
 
     public abstract class CharacterData { }
@@ -601,6 +609,33 @@ namespace RPGSYSTEM
         {
             
         } 
+    }
+
+    public class Utility
+    {
+        public static List<GameObject> FindChildrenWithTag(GameObject parent, string tag)
+        {
+            List<GameObject> taggedChildren = new List<GameObject>();
+
+            foreach (Transform child in parent.transform)
+            {
+                if (child.CompareTag(tag))
+                {
+                    taggedChildren.Add(child.gameObject);
+                }
+
+                // Recursively search in the child's children
+                taggedChildren.AddRange(FindChildrenWithTag(child.gameObject, tag));
+            }
+            return taggedChildren;
+        }
+
+        public static List<string> EnumToStringList<T>() where T : Enum
+        {
+            // Convert the array returned by Enum.GetNames to a list
+            List<string> enumList = new List<string>(Enum.GetNames(typeof(T)));
+            return enumList;
+        }
     }
 }
 
