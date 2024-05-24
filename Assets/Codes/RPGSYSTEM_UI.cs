@@ -114,5 +114,40 @@ namespace RPGSYSTEM.UI
     {
 
     }
+
+    //public class ViewController : MonoBehaviour
+   // {
+      
+   // }
+
+  
+
+    public class ViewModel : MonoBehaviour
+    {
+        public enum ReferenceType { Field, Method }
+
+        public ReferenceType referenceType;
+
+        public virtual T GetField<T>(string fieldName)
+        {
+            T a = default;
+
+            return a;
+        }
+
+        public virtual void CAllMethod(string methodName)
+        {
+            Invoke(methodName.ToString(),0);
+        }
+        
+    }
    
+    /*public class View : MonoBehaviour
+    {
+        [SerializeField]
+        ViewController.UIType uIType;
+        // UI 타입을 정했다면 ui 타입이 가리키고 있는 클래스를 찾아가서 그안에
+        // 이넘 타입을 담을 변수를 생성해서 인스팩터창에 넣고 싶어.
+     
+    }*/
 }
