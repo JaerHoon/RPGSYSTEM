@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using System;
+using RPGSYSTEM.UI;
 
-[CustomEditor(typeof(View))]
+[CustomEditor(typeof(View), true)]
 public class ViewEditor : Editor
 {
     public override void OnInspectorGUI()
@@ -17,6 +18,10 @@ public class ViewEditor : Editor
 
         // UIType 선택을 위한 드롭다운 표시
         view.UIType = (ViewController.UIType)EditorGUILayout.EnumPopup("UI Type", view.UIType);
+        view.SelectType = (ViewModel.ReferenceType)EditorGUILayout.EnumPopup("Valuetype", view.SelectType);
+        //System.Type enType = view.SelectValue.GetType();
+        // SelectValue의 형식을 기반으로 EnumPopup 표시
+        //view.SelectValue = EditorGUILayout.EnumPopup("Select Value", view.SelectValue, enType);
 
         // 선택된 UIType에 따라서 이넘 값을 표시
         if (view.ViewController != null)
@@ -24,8 +29,10 @@ public class ViewEditor : Editor
             System.Type enumType = view.ViewController.GetUIEnum(view.UIType);
             if (enumType != null)
             {
+                //System.Type enT = view.SelectValue.GetType();
                 // 해당 이넘 값을 표시
-                view.EnumValue = EditorGUILayout.EnumPopup("Enum Value", view.EnumValue);
+                //view.SelectType = EditorGUILayout.EnumPopup("Enum Value", view.SelectType);
+               // view.SelectValue =  EditorGUILayout.EnumPopup("Select Value", view.SelectValue);
             }
             else
             {
@@ -36,5 +43,6 @@ public class ViewEditor : Editor
         {
             EditorGUILayout.HelpBox("ViewController is not assigned.", MessageType.Error);
         }
+
     }
 }
