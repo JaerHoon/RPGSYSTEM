@@ -8,7 +8,7 @@ using System.Reflection;
 public class SKillManager : MonoBehaviour
 {
     List<SkillData> skillDatas = new List<SkillData>();
-    List<Skill<SkillData>> skills = new List<Skill<SkillData>>();
+   // List<Skill<SkillData>> skills = new List<Skill<SkillData>>();
 
     private void Start()
     {
@@ -31,17 +31,17 @@ public class SKillManager : MonoBehaviour
            
             Type type = Type.GetType(skillDatas[i].skillName);
 
-            Skill<SkillData> _skill = gameObject.AddComponent(type) as Skill<SkillData>;
+            //Skill<SkillData> _skill = gameObject.AddComponent(type) as Skill<SkillData>;
 
-            _skill.Init(skillDatas[i]);
+            //_skill.Init(skillDatas[i]);
 
-            skills.Add(_skill);
+            //.Add(_skill);
         }
 
-        foreach (Skill<SkillData> Skill in skills)
+        /*foreach (Skill<SkillData> Skill in skills)
         {
             Skill.OnSkill();
-        }
+        }*/
     }
 }
 

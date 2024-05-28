@@ -4,7 +4,7 @@ using UnityEngine;
 using RPGSYSTEM;
 
 
-public class FireBall : Skill<SkillData>
+/*public class FireBall : Skill<SkillData>
 {
     public override void OnSkill()
     {
@@ -19,5 +19,5 @@ public class IceWall : Skill<SkillData>
         print("IceWall");
     }
 
-}
+}*/
 
