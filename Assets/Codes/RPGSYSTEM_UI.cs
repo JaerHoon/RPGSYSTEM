@@ -6,6 +6,7 @@ using TMPro;
 using RPGSYSTEM;
 using System;
 using System.Reflection;
+using UnityEditor;
 
 namespace RPGSYSTEM.UI
 {
@@ -117,35 +118,59 @@ namespace RPGSYSTEM.UI
     }
 
     //public class ViewController : MonoBehaviour
-   // {
-      
-   // }
+    // {
 
-  
+    // }
+
+
 
     public class ViewModel : MonoBehaviour
     {
         public enum ReferenceType { Field, Method }
+        public enum Method { ButtonEvent, dragEvent }
 
-        public virtual System.Type GettypeEnums(System.Enum referenceType)
-        {
-            string enumTypeName = referenceType.GetType().Name;
-            // 현재 클래스의 모든 public nested enum 타입 가져오기
-            Type[] enumTypes = this.GetType().GetNestedTypes(BindingFlags.Public | BindingFlags.Static);
+        public ViewController.Eventchain ButtonEvent;
+        public ViewController.Eventchain dragEvent;
 
-            // typeName과 일치하는 enum 타입 찾기
-            foreach (Type enumType in enumTypes)
-            {
-                if (enumType.Name == enumTypeName)
-                {
-                    return enumType;// 필드 이넘 혹은 메소드 이넘 넘겨준다.
-                }
-            }
-
-            throw new ArgumentException("Invalid enum type name");
-        }
-    
+        
              
+        // 모든 필드와 메서드 이름을 이넘타입으로 만들기
+
+        void OnValidate()
+        {
+            ButtonEvent += OnClick;
+            dragEvent += OnDrag;
+            dragEvent += Dragging;
+            dragEvent += OffDrag;
+            dragEvent += Drop;
+
+        }
+        
+        public virtual void OnClick()
+        {
+
+        }
+
+        public virtual void OnDrag()
+        {
+
+        }
+
+        public virtual void Dragging()
+        {
+
+        }
+
+        public virtual void OffDrag()
+        {
+
+        }
+
+        public virtual void Drop()
+        {
+
+        }
+
 
         public virtual T GetField<T>(string fieldName)
         {

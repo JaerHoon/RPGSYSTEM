@@ -4,40 +4,63 @@ using UnityEngine;
 using System;
 using RPGSYSTEM.UI;
 using System.Reflection;
+using System.Linq;
 
 
 public class ViewController : MonoBehaviour
 {
     public enum UIType { PlayerInfo, SkillInfo }
     public List<ViewModel> viewModels = new List<ViewModel>();
- 
+    
     public PlayerInfo playerInfo;
     public SkillInfo skillInfo;
 
-    [SerializeField]
-    protected System.Enum ViewModeEnums;
+    public delegate void Eventchain();
+    
 
-    public virtual System.Type GetUIEnum(UIType uiType)
+    public void ChainMethod(View view, UIType uIType )
     {
-        return typeof( ViewModel.ReferenceType);// 필드인지 메소드인지 반환
+        int num = (int)uIType;
+        view.ButtonPressed += viewModels[num].OnClick;
+        view.Ondrag += viewModels[num].OnDrag;
+        view.Dragging += viewModels[num].Dragging;
+        view.OffDrag += viewModels[num].OffDrag;
+        view.Drop += viewModels[num].Drop;
+     
+    }
 
-        /*switch (uiType)
+   public virtual object GetValue(UIType uIType, string valueName)
+    {
+       
+        object value = default;
+        object classins = default;
+        string typeName = uIType.ToString();
+        Type type = Assembly.GetExecutingAssembly().GetTypes().FirstOrDefault(t => t.Name == typeName);
+        FieldInfo[] fields = this.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance);
+        foreach (FieldInfo field in fields)
         {
-            case UIType.PlayerInfo:
-                return typeof(PlayerInfo.ReferenceType);
-            case UIType.SkillInfo:
-                return typeof(SkillInfo.FieldName);
-            default:
-                Debug.LogError("Unknown UIType");
-                return null;
-        }*/
+            if (field.FieldType == type)
+            {
+                classins = field.GetValue(this);
+                break; 
+            }
+        }
+        
+        if (classins != null)
+        {
+         
+            FieldInfo field = type.GetFields(BindingFlags.Public | BindingFlags.Instance)
+                                  .FirstOrDefault(f => f.Name == valueName);
+           
+
+            if (field != null)
+            {
+                value = field.GetValue(classins);
+            }
+        }
+
+        return value;
     }
 
-    public virtual System.Type GetTypeEnum(UIType uiType, System.Enum _enum) // 매개변수로 필드인지 메소드인지 받아옴.
-    {
-        int num = (int)uiType;
-        System.Type type = viewModels[num].GettypeEnums(_enum); // 필드 혹은 메서드 이넘을 받아온다.
-        return type; // 필드 혹은 메서드 이넘 반환.
-    }
-
+ 
 }

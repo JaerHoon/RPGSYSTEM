@@ -5,6 +5,9 @@ using RPGSYSTEM.UI;
 
 public class SkillInfo : ViewModel
 {
-    public enum FieldName { Icon, Name }
-    public enum MethodName { OnSkill, OffSkill }
+    public enum Field { Icon, Name }
+   
+    public Sprite Icon;
+    public string Name = "FireBall";
+
 }
