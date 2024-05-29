@@ -152,8 +152,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: abdada00583c7174c9e74b547c99ee5e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Icon: 10
-  Name: 5
+  Icon: {fileID: 10911, guid: 0000000000000000f000000000000000, type: 0}
+  Name: aggg
 --- !u!4 &93541028
 Transform:
   m_ObjectHideFlags: 0
@@ -403,6 +403,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b7cc98276c8e66040bf472108abdcc8b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  viewModels: []
   playerInfo: {fileID: 2101356582}
   skillInfo: {fileID: 93541027}
 --- !u!4 &1364467419
@@ -464,11 +465,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7dcb7026a8d625d40826abf8c75a9627, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  viewType: 0
   viewController: {fileID: 1364467418}
   uIType: 0
   referenceType: 1
-  SetectedValue: OnClick
-  _value: 
+  SetectedValue: dragEvent
+  valueText: Drop
 --- !u!1 &2101356581
 GameObject:
   m_ObjectHideFlags: 0
