@@ -122,29 +122,19 @@ namespace RPGSYSTEM.UI
 
     // }
 
+    public class Slot : MonoBehaviour
+    {
+        public int Hp;
+        public string Name;
+        public Sprite Icon;
+        public Sprite frame;
+        public Sprite Back;
+    }
 
 
     public class ViewModel : MonoBehaviour
     {
-        public enum ReferenceType { Field, Method }
-        public enum Method { ButtonEvent, dragEvent }
-
-        public ViewController.Eventchain ButtonEvent;
-        public ViewController.Eventchain dragEvent;
-
-        
-             
-        // 모든 필드와 메서드 이름을 이넘타입으로 만들기
-
-        void OnValidate()
-        {
-            ButtonEvent += OnClick;
-            dragEvent += OnDrag;
-            dragEvent += Dragging;
-            dragEvent += OffDrag;
-            dragEvent += Drop;
-
-        }
+       public List<Slot> slots = new List<Slot>();
         
         public virtual void OnClick()
         {
@@ -167,6 +157,32 @@ namespace RPGSYSTEM.UI
         }
 
         public virtual void Drop()
+        {
+
+        }
+
+
+        public virtual void OnClickSlot(int num)
+        {
+
+        }
+
+        public virtual void OnDragSlot(int num)
+        {
+
+        }
+
+        public virtual void DraggingSlot(int num)
+        {
+
+        }
+
+        public virtual void OffDragSlot(int num)
+        {
+
+        }
+
+        public virtual void DropSlot(int num)
         {
 
         }
