@@ -576,13 +576,9 @@ namespace RPGSYSTEM
 
         public enum BuffDebuffStat { Ready, Active }
 
-        public enum UIType { Slots, Buttons, Infos}
+        public enum UIType { Image, Text, Slot, Info, GameObject, Slider}
     }
 
-    public class Types
-    {
-        public static Type[] type = new Type[] { typeof(Slots), typeof(Buttons) };
-    }
 
     public abstract class CharacterData { }
     
@@ -636,6 +632,29 @@ namespace RPGSYSTEM
             // Convert the array returned by Enum.GetNames to a list
             List<string> enumList = new List<string>(Enum.GetNames(typeof(T)));
             return enumList;
+        }
+
+        public static List<T> FindAllComponentsInChildren<T>(Transform parent) where T : Component
+        {
+            List<T> components = new List<T>();
+
+            // 현재 부모의 자식들을 순회합니다.
+            foreach (Transform child in parent)
+            {
+                // 현재 child에서 T 타입의 컴포넌트를 찾습니다.
+                T component = child.GetComponent<T>();
+
+                // 컴포넌트가 있다면 리스트에 추가합니다.
+                if (component != null)
+                {
+                    components.Add(component);
+                }
+
+                // 재귀적으로 자식 오브젝트를 순회합니다.
+                components.AddRange(FindAllComponentsInChildren<T>(child));
+            }
+
+            return components;
         }
     }
 
