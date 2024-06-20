@@ -8,6 +8,7 @@ using System;
 using System.Reflection;
 using UnityEditor;
 using System.Linq;
+using UnityEngine.EventSystems;
 
 namespace RPGSYSTEM.UI
 {
@@ -19,8 +20,10 @@ namespace RPGSYSTEM.UI
         public override void OnInspectorGUI()
         {
             UI = (UIView)target;
+
+            UI.uIType = (Enums.UIType)EditorGUILayout.EnumPopup("UI Type", UI.uIType);
             UI.uIController = (UIController)EditorGUILayout.ObjectField("UIController", UI.uIController, typeof(UIController), true);
-           
+
             if (UI.uIController == null) return;
             if (UI.uIController.uIMoels.Count > 0)
             {
@@ -44,10 +47,11 @@ namespace RPGSYSTEM.UI
                 {
                     case Enums.UIType.Image: Image(type); break;
                     case Enums.UIType.GameObject: GameObject(type); break;
-                    case Enums.UIType.Info: Info(type); break;
+                    case Enums.UIType.Info: InFo(type); break;
                     case Enums.UIType.Slider: Slider(type); break;
                     case Enums.UIType.Slot: Slot(type); break;
                     case Enums.UIType.Text: Text(type); break;
+                    case Enums.UIType.DragNDrop: DragNDrop(type); break;
                 }
 
             }
@@ -58,14 +62,19 @@ namespace RPGSYSTEM.UI
             }
         }
 
+        void DragNDrop(Type type)
+        {
+            UI.SlotNumber = EditorGUILayout.IntField("SlotNumber", UI.SlotNumber);
+        }
+
         void Image(Type type)
         {
             string[] fieldNames = type.GetFields(BindingFlags.Public | BindingFlags.Instance)
-                                  .Where(field => field.FieldType == typeof(Sprite))
+                                  .Where(field => field.FieldType == typeof(Image))
                                   .Select(field => field.Name)
                                   .ToArray();
             string[] prorettyNames = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                                    .Where(pro => pro.PropertyType == typeof(Sprite))
+                                    .Where(pro => pro.PropertyType == typeof(Image))
                                     .Select(pro => pro.Name)
                                     .ToArray();
 
@@ -76,59 +85,34 @@ namespace RPGSYSTEM.UI
                 int index = Array.IndexOf(combinedArray, UI.ValueName);
                 if (index == -1) index = 0;
 
-                index = EditorGUILayout.Popup("ValueName", index, combinedArray);
+                index = EditorGUILayout.Popup("fieldName", index, combinedArray);
 
                 UI.ValueName = combinedArray[index];
+
+                if (fieldNames.Contains(UI.ValueName))
+                {
+                    UI.value1_type = UIView.valueType.Field;
+                }
+                else if (prorettyNames.Contains(UI.ValueName))
+                {
+                    UI.value1_type = UIView.valueType.Property;
+                }
+
             }
 
-            object va = default;
 
-            if (fieldNames.Contains(UI.ValueName))
-            {
-                UI.value1_type = UIView.valueType.Field;
-            }
-            else if (prorettyNames.Contains(UI.ValueName))
-            {
-                UI.value1_type = UIView.valueType.Property;
-            }
-            va = UI.uIModel.GetValue(UI.ValueText, UI.value1_type);
-
-
-
-            Sprite sp = va as Sprite;
-
-            if (sp != null)
-            {
-                UI.Value = va;
-                UI.ValueText = sp.name;
-            }
-            else
-            {
-                UI.ValueText = "null";
-            }
-
-            UI.ValueText = EditorGUILayout.TextField("SpriteName", UI.ValueText);
         }
 
         void Text(Type type)
         {
             string[] fieldNames = type.GetFields(BindingFlags.Public | BindingFlags.Instance)
                                    .Where(field =>
-                                     field.FieldType == typeof(int) ||
-                                     field.FieldType == typeof(float) ||
-                                     field.FieldType == typeof(string) || (field.FieldType.IsGenericType && field.FieldType.GetGenericTypeDefinition() == typeof(Nullable<>) && (
-                                     field.FieldType.GetGenericArguments()[0] == typeof(int) ||
-                                     field.FieldType.GetGenericArguments()[0] == typeof(float))))
+                                     field.FieldType == typeof(TextMeshProUGUI))
                                      .Select(field => field.Name)
                                      .ToArray();
             string[] prorettyNames = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
                                    .Where(property =>
-                                     property.PropertyType == typeof(int) ||
-                                     property.PropertyType == typeof(float) ||
-                                     property.PropertyType == typeof(string) ||
-                                     (property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>) &&
-                                     (property.PropertyType.GetGenericArguments()[0] == typeof(int) ||
-                                     property.PropertyType.GetGenericArguments()[0] == typeof(float)))).Select(pro => pro.Name)
+                                     property.PropertyType == typeof(TextMeshProUGUI)).Select(pro => pro.Name)
                                      .ToArray();
 
             string[] combinedArray = fieldNames.Concat(prorettyNames).ToArray();
@@ -138,93 +122,55 @@ namespace RPGSYSTEM.UI
                 int index = Array.IndexOf(combinedArray, UI.ValueName);
                 if (index == -1) index = 0;
 
-                index = EditorGUILayout.Popup("ValueName", index, combinedArray);
+                index = EditorGUILayout.Popup("fieldName", index, combinedArray);
 
                 UI.ValueName = combinedArray[index];
-            }
 
-            object va = default;
-
-            if (fieldNames.Contains(UI.ValueName))
-            {
-                UI.value1_type = UIView.valueType.Field;
-            }
-            else if (prorettyNames.Contains(UI.ValueName))
-            {
-                UI.value1_type = UIView.valueType.Property;
-            }
-            va = UI.uIModel.GetValue(UI.ValueText, UI.value1_type);
-
-            int? intva = va as int?;
-
-            UI.Value = va;
-
-            if (intva != null)
-            {
-                UI.ValueText = intva.ToString();
-            }
-            else
-            {
-                UI.ValueText = "null";
-            }
-
-            UI.ValueText = EditorGUILayout.TextField("Value", UI.ValueText);
-        }
-
-        void Slot(Type type)
-        {
-            string[] listName = type.GetFields(BindingFlags.Public | BindingFlags.Instance)
-                              .Where(fi => fi.FieldType == typeof(List<Slot>))
-                              .Select(fi => fi.Name).ToArray();
-
-            if (listName.Length > 0)
-            {
-                int index = Array.IndexOf(listName, UI.ValueName);
-                if (index == -1) index = 0;
-
-                index = EditorGUILayout.Popup("SlotList", index, listName);
-
-                UI.ValueName = listName[index];
-
-                UI.SlotNumber = EditorGUILayout.IntField("SlotNumber", UI.SlotNumber);
-
-                UI.slot = UI.uIModel.GetSlotList(UI.ValueName, UI.SlotNumber);
-
+                if (fieldNames.Contains(UI.ValueName))
+                {
+                    UI.value1_type = UIView.valueType.Field;
+                }
+                else if (prorettyNames.Contains(UI.ValueName))
+                {
+                    UI.value1_type = UIView.valueType.Property;
+                }
             }
 
         }
-
-        void Info(Type type)
+        void Slider(Type type)
         {
-            string[] listName = type.GetFields(BindingFlags.Public | BindingFlags.Instance)
-                             .Where(fi => fi.FieldType == typeof(Info))
-                             .Select(fi => fi.Name).ToArray();
+            FieldInfo[] field = type.GetFields(BindingFlags.Public | BindingFlags.Instance);
+            string[] fieldName = field.Where(field =>
+                field.FieldType == typeof(Slider))
+                .Select(field => field.Name)
+               .ToArray();
 
-            if (listName.Length > 0)
+            PropertyInfo[] property = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            string[] propertyName = property.Where(property =>
+                property.PropertyType == typeof(Slider)).Select(pro => pro.Name)
+            .ToArray();
+
+            string[] combinedArray = fieldName.Concat(propertyName).ToArray();
+
+            if (combinedArray.Length > 0)
             {
-                int index = Array.IndexOf(listName, UI.ValueName);
+                int index = Array.IndexOf(combinedArray, UI.ValueName);
                 if (index == -1) index = 0;
 
-                index = EditorGUILayout.Popup("InfoName", index, listName);
+                index = EditorGUILayout.Popup("fieldName", index, combinedArray);
 
-                UI.ValueName = listName[index];
+                UI.ValueName = combinedArray[index];
 
-                Info va = UI.uIModel.GetValue(UI.ValueName, UIView.valueType.Field) as Info;
-
-                if (va != null)
+                if (fieldName.Contains(UI.ValueName))
                 {
-                    UI.info = va;
-                    UI.ValueText = va.ToString();
+                    UI.value1_type = UIView.valueType.Field;
                 }
-                else
+                else if (propertyName.Contains(UI.ValueName))
                 {
-                    UI.ValueText = null;
+                    UI.value1_type = UIView.valueType.Property;
                 }
-
-                UI.ValueText = EditorGUILayout.TextField("Valuetype", UI.ValueText);
-
-
             }
+
         }
 
         void GameObject(Type type)
@@ -258,112 +204,71 @@ namespace RPGSYSTEM.UI
                     UI.value1_type = UIView.valueType.Property;
                 }
 
-                UI.uIModel.SetGameObject(UI.gameObject, UI.ValueName, UI.value1_type);
+              
             }
-
+            
         }
-
-        void Slider(Type type)
+        void Slot(Type type)
         {
-            FieldInfo[] field = type.GetFields(BindingFlags.Public | BindingFlags.Instance);
-            string[] fieldName = field.Where(field =>
-                field.FieldType == typeof(int) ||
-                field.FieldType == typeof(float))
-                .Select(field => field.Name)
-               .ToArray();
+            string[] listName = type.GetFields(BindingFlags.Public | BindingFlags.Instance)
+                              .Where(fi => fi.FieldType == typeof(List<Slot>))
+                              .Select(fi => fi.Name).ToArray();
 
-            PropertyInfo[] property = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
-            string[] propertyName = property.Where(property =>
-                property.PropertyType == typeof(int) ||
-                property.PropertyType == typeof(float)).Select(pro => pro.Name)
-            .ToArray();
-
-            string[] conbinedArray = fieldName.Concat(propertyName).ToArray();
-
-            if (conbinedArray.Length > 0)
+            if (listName.Length > 0)
             {
-                int index = Array.IndexOf(conbinedArray, UI.ValueName);
+                int index = Array.IndexOf(listName, UI.ValueName);
                 if (index == -1) index = 0;
-                index = EditorGUILayout.Popup("MaxName", index, conbinedArray);
 
-                UI.ValueName = conbinedArray[index];
+                index = EditorGUILayout.Popup("SlotList", index, listName);
 
-                object va = default;
+                UI.ValueName = listName[index];
 
-                if (fieldName.Contains(UI.ValueName))
-                {
-                    UI.value1_type = UIView.valueType.Field;
-                }
-                else if (propertyName.Contains(UI.ValueName))
-                {
-                    UI.value1_type = UIView.valueType.Property;
-                }
+                UI.SlotNumber = EditorGUILayout.IntField("SlotNumber", UI.SlotNumber);
 
-                va = UI.uIModel.GetValue(UI.ValueName, UI.value1_type);
-                UI.Value = va;
-                UI.ValueText = va.ToString();
-                UI.ValueText = EditorGUILayout.TextField("Maxvalue", UI.ValueText);
+            }
+            
+        }
 
-                int index2 = Array.IndexOf(conbinedArray, UI.ValueName2);
-                if (index2 == -1) index2 = 0;
-                index2 = EditorGUILayout.Popup("CurName", index2, conbinedArray);
+        void InFo(Type type)
+        {
+            string[] listName = type.GetFields(BindingFlags.Public | BindingFlags.Instance)
+                             .Where(fi => fi.FieldType == typeof(Info))
+                             .Select(fi => fi.Name).ToArray();
 
-                UI.ValueName2 = conbinedArray[index2];
+            if (listName.Length > 0)
+            {
+                int index = Array.IndexOf(listName, UI.ValueName);
+                if (index == -1) index = 0;
 
-                object va2 = default;
+                index = EditorGUILayout.Popup("InfoName", index, listName);
 
-                if (fieldName.Contains(UI.ValueName2))
-                {
-                    UI.value2_type = UIView.valueType.Field;
-                }
-                else if (propertyName.Contains(UI.ValueName2))
-                {
-                    UI.value2_type = UIView.valueType.Property;
-                }
+                UI.ValueName = listName[index];
 
-                va2 = UI.uIModel.GetValue(UI.ValueName2, UI.value2_type);
-                UI.Value2 = va2;
-                UI.ValueText2 = va2.ToString();
-                UI.ValueText2 = EditorGUILayout.TextField("Curvalue", UI.ValueText2);
             }
         }
-    }
 
-    public class UIView : MonoBehaviour
+    
+    }
+    
+
+    public class UIView : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
     {
         public Enums.UIType uIType;
-        public enum IsSlotType { None, Slot}
-        public IsSlotType isSlottype;
-
+       
         public enum valueType { Field, Property }
         [HideInInspector]
         public valueType value1_type;
-        [HideInInspector]
-        public valueType value2_type;
-
+       
         public UIController uIController;
         public int UIModel_Index;
       
         [HideInInspector]
         public UIModel uIModel;
-        [HideInInspector]
-        public object Value;
-        [HideInInspector]
-        public object Value2;
-        [HideInInspector]
-        public object Value3;
+       
+      
         [HideInInspector]
         public string ValueName;
-        [HideInInspector]
-        public string ValueName2;
-        [HideInInspector]
-        public string ValueName3;
-        [HideInInspector]
-        public string ValueText;
-        [HideInInspector]
-        public string ValueText2;
-        [HideInInspector]
-        public string ValueText3;
+       
 
         [HideInInspector]
         public int SlotNumber;
@@ -376,88 +281,78 @@ namespace RPGSYSTEM.UI
         protected TextMeshProUGUI textMesh;
         protected Slider slider;
 
+        public delegate void DargNDorpEvent(PointerEventData eventData, int SlotNum);
+        public DargNDorpEvent Ondrag;
+        public DargNDorpEvent Dragging;
+        public DargNDorpEvent OffDrag;
+        public DargNDorpEvent Drop;
 
-        protected TextMeshProUGUI SlotName_Text;
-        protected TextMeshProUGUI SlotLv_Text;
-        protected TextMeshProUGUI SlotDescription_Text;
-        protected TextMeshProUGUI SlotID_Text;
-        protected Image SlotIconImage;
-        protected Image SlotCoolTimeImage1;
-        protected Image SlotCoolTimeImage2;
-        protected Image SlotFrameImage;
-        protected Image SlotBackGroundImage;
 
-       
-
-        private void OnEnable()
-        {
-            uIModel.UPdateUI += UIUpdate;
-        }
-
-        private void Start()
-        {
-            Init();
-        }
         protected void Init()
         {
             SetComopnent(uIType);
-           
         }
 
         protected void SetComopnent(Enums.UIType uIType)
         {
             switch (uIType)
             {
-                case Enums.UIType.Image: TryGetComponent<Image>(out image); break;
-                case Enums.UIType.Text: TryGetComponent<TextMeshProUGUI>(out textMesh); break;
-                case Enums.UIType.Slider: TryGetComponent<Slider>(out slider); break;
+                case Enums.UIType.Image: 
+                    TryGetComponent<Image>(out image);
+                    Set<Image>(image);
+                    break;
+                case Enums.UIType.Text: 
+                    TryGetComponent<TextMeshProUGUI>(out textMesh);
+                    Set<TextMeshProUGUI>(textMesh);
+                    break;
+                case Enums.UIType.Slider: 
+                    TryGetComponent<Slider>(out slider);
+                    Set<Slider>(slider);
+                    break;
                 case Enums.UIType.GameObject: SetGameObject(); break;
                 case Enums.UIType.Slot: SetSlot(); break;
+                case Enums.UIType.Info: SetInfo(); break;
+                case Enums.UIType.DragNDrop: SetDragNDrop(); break;
+               
             }
 
-            UIUpdate();
+          
         }
-
-        public virtual void UIUpdate()
+        protected virtual void SetDragNDrop()
         {
-            switch (this.uIType)
-            {
-                case Enums.UIType.Image: ImageUPdate(); break;
-                case Enums.UIType.Text: TextMeshProGUGIUpdate(); break;
-                case Enums.UIType.Slider: SliderUPdate(); break;
-                case Enums.UIType.Slot: SlotUPdate(); break;
-                
-            }
+            uIModel.SetDragNDrop(ref Ondrag, ref Dragging, ref OffDrag, ref Drop);
         }
 
-        protected virtual void ImageUPdate()
+        public void OnBeginDrag(PointerEventData eventData)
         {
-            Value = uIModel.GetValue(ValueName, value1_type);
-            if(Value != null)
-            {
-                image.sprite = (Sprite)Value;
-            }
-            else
-            {
-                image.sprite = default;
-            }
+
+            Ondrag?.Invoke(eventData, SlotNumber);
         }
 
-        protected virtual void SliderUPdate()
+        public void OnDrag(PointerEventData eventData)
         {
-            Value = uIModel.GetValue(ValueName, value1_type);
-            Value2 = uIModel.GetValue(ValueName2, value2_type);
 
-            slider.maxValue = Value != null ? (float)Value : 0;
-            slider.value = Value2 != null ? (float)Value2 : 0;
+            Dragging?.Invoke(eventData, SlotNumber);
         }
 
-        protected virtual void TextMeshProGUGIUpdate()
+        public void OnEndDrag(PointerEventData eventData)
         {
-            Value = uIModel.GetValue(ValueName, value1_type);
-            textMesh.text = Value?.ToString() ?? null;
+
+            OffDrag?.Invoke(eventData, SlotNumber);
         }
 
+        public void OnDrop(PointerEventData eventData)
+        {
+            Drop?.Invoke(eventData, SlotNumber);
+        }
+
+
+        protected void Set<T>(T component) where T: Component
+        {
+            uIModel.SetComponent<T>(component, ValueName, value1_type);
+        }
+
+      
         protected virtual void SetGameObject()
         {
             uIModel.SetGameObject(this.gameObject, ValueName, value1_type);
@@ -466,66 +361,113 @@ namespace RPGSYSTEM.UI
 
         protected virtual void SetSlot()
         {
-            List<UISlot_component> SlotComponent = Utility.FindAllComponentsInChildren<UISlot_component>(this.gameObject.transform);
+            slot = new Slot();
+            slot.Slotnum = SlotNumber;
+            slot.mySlot = this.gameObject;
+
+            List<UIComponent> SlotComponent = Utility.FindAllComponentsInChildren<UIComponent>(this.gameObject.transform);
             for(int i = 0; i < SlotComponent.Count; i++)
             {
                 switch (SlotComponent[i].componentType)
                 {
-                   
-                    case UISlot_component.SlotComponent.Icon: SlotComponent[i].TryGetComponent<Image>(out SlotIconImage); break;
-                    case UISlot_component.SlotComponent.Frame: SlotComponent[i].TryGetComponent<Image>(out SlotFrameImage); break;
-                    case UISlot_component.SlotComponent.CoolTime1: SlotComponent[i].TryGetComponent<Image>(out SlotCoolTimeImage1); break;
-                    case UISlot_component.SlotComponent.CoolTime2: SlotComponent[i].TryGetComponent<Image>(out SlotCoolTimeImage2); break;
-                    case UISlot_component.SlotComponent.Background: SlotComponent[i].TryGetComponent<Image>(out SlotBackGroundImage); break;
+                    case UIComponent.UI_Component.Icon: SlotComponent[i].TryGetComponent<Image>(out slot.Icon); break;
+                    case UIComponent.UI_Component.Frame: SlotComponent[i].TryGetComponent<Image>(out slot.Frame); break;
+                    case UIComponent.UI_Component.CoolTime1: SlotComponent[i].TryGetComponent<Image>(out slot.CoolTime); break;
+                    case UIComponent.UI_Component.CoolTime2: SlotComponent[i].TryGetComponent<Image>(out slot.CoolTime2); break;
+                    case UIComponent.UI_Component.Background: SlotComponent[i].TryGetComponent<Image>(out slot.Background); break;
 
-                    case UISlot_component.SlotComponent.Description: SlotComponent[i].TryGetComponent<TextMeshProUGUI>(out SlotDescription_Text); break;
-                    case UISlot_component.SlotComponent.Name: SlotComponent[i].TryGetComponent<TextMeshProUGUI>(out SlotName_Text); break;
-                    case UISlot_component.SlotComponent.ID: SlotComponent[i].TryGetComponent<TextMeshProUGUI>(out SlotID_Text); break;
-                    case UISlot_component.SlotComponent.Lv: SlotComponent[i].TryGetComponent<TextMeshProUGUI>(out SlotLv_Text); break;
+                    case UIComponent.UI_Component.Description: SlotComponent[i].TryGetComponent<TextMeshProUGUI>(out slot.Description); break;
+                    case UIComponent.UI_Component.Name: SlotComponent[i].TryGetComponent<TextMeshProUGUI>(out slot.Name); break;
+                    case UIComponent.UI_Component.ID: SlotComponent[i].TryGetComponent<TextMeshProUGUI>(out slot.ID); break;
+                    case UIComponent.UI_Component.Lv: SlotComponent[i].TryGetComponent<TextMeshProUGUI>(out slot.Lv); break;
+                    case UIComponent.UI_Component.Grade: SlotComponent[i].TryGetComponent<TextMeshProUGUI>(out slot.grade); break;
+
+                    case UIComponent.UI_Component.HPbar: SlotComponent[i].TryGetComponent<Slider>(out slot.HPbar); break;
+                    case UIComponent.UI_Component.MPbar: SlotComponent[i].TryGetComponent<Slider>(out slot.MPbar); break;
+                    case UIComponent.UI_Component.EXPbar:SlotComponent[i].TryGetComponent<Slider>(out slot.EXPvar); break;
 
                 }
             }
 
-            slot = uIModel.GetSlotList(ValueName, SlotNumber);
+            uIModel.SetSLot(ValueName, slot);
         }
 
-        protected virtual void SlotUPdate()
+        protected virtual void SetInfo()
         {
-            if (SlotName_Text != null) SlotName_Text.text = slot.Name;
-            if (SlotID_Text != null) SlotID_Text.text = slot.ID.ToString();
-            if (SlotLv_Text != null) SlotLv_Text.text = slot.Lv.ToString();
-            if (SlotDescription_Text != null) SlotDescription_Text.text = slot.Description;
-            if (SlotIconImage != null) SlotIconImage.sprite = slot.Icon;
-            if (SlotFrameImage != null) SlotFrameImage.sprite = slot.Frame;
-            if (SlotCoolTimeImage1 != null) SlotCoolTimeImage1.fillAmount = slot.CoolTime;
-            if (SlotCoolTimeImage2 != null) SlotCoolTimeImage2.fillAmount = slot.CoolTime2;
-            if (SlotBackGroundImage != null) SlotBackGroundImage.sprite = slot.Background;
+            info = new Info();
+            info.myObject = this.gameObject;
+            List<UIComponent> SlotComponent = Utility.FindAllComponentsInChildren<UIComponent>(this.gameObject.transform);
+            for (int i = 0; i < SlotComponent.Count; i++)
+            {
+                switch (SlotComponent[i].componentType)
+                {
+                    case UIComponent.UI_Component.Icon: SlotComponent[i].TryGetComponent<Image>(out info.Icon); break;
+                    case UIComponent.UI_Component.Frame: SlotComponent[i].TryGetComponent<Image>(out info.Frame); break;
+                    case UIComponent.UI_Component.CoolTime1: SlotComponent[i].TryGetComponent<Image>(out info.CoolTime); break;
+                    case UIComponent.UI_Component.CoolTime2: SlotComponent[i].TryGetComponent<Image>(out info.CoolTime2); break;
+                    case UIComponent.UI_Component.Background: SlotComponent[i].TryGetComponent<Image>(out info.Background); break;
+
+                    case UIComponent.UI_Component.Description: SlotComponent[i].TryGetComponent<TextMeshProUGUI>(out info.Description); break;
+                    case UIComponent.UI_Component.Name: SlotComponent[i].TryGetComponent<TextMeshProUGUI>(out info.Name); break;
+                    case UIComponent.UI_Component.ID: SlotComponent[i].TryGetComponent<TextMeshProUGUI>(out info.ID); break;
+                    case UIComponent.UI_Component.Lv: SlotComponent[i].TryGetComponent<TextMeshProUGUI>(out info.Lv); break;
+                    case UIComponent.UI_Component.Grade: SlotComponent[i].TryGetComponent<TextMeshProUGUI>(out info.grade); break;
+
+                    case UIComponent.UI_Component.HPbar: SlotComponent[i].TryGetComponent<Slider>(out info.HPbar); break;
+                    case UIComponent.UI_Component.MPbar: SlotComponent[i].TryGetComponent<Slider>(out info.MPbar); break;
+                    case UIComponent.UI_Component.EXPbar: SlotComponent[i].TryGetComponent<Slider>(out info.EXPvar); break;
+
+                }
+            }
+
+            uIModel.SetInfo(ValueName, info);
         }
 
-        private void OnDisable()
-        {
-            uIModel.UPdateUI -= UIUpdate;
-        }
-
+       
     }
 
-    public class UISlot_component : MonoBehaviour
+    public class UIComponent : MonoBehaviour
     {
-        public enum SlotComponent { Name, ID, Icon, Frame, Lv, CoolTime1, CoolTime2, Description, Background }
-        public SlotComponent componentType;
+        public enum UI_Component { Name, ID, Icon, Frame, Lv, CoolTime1, CoolTime2, Description, Background, Grade, HPbar, MPbar, EXPbar }
+        public UI_Component componentType;
     }
     public class Slot
     {
-        public string Name;
-        public int ID;
-        public Sprite Icon;
-        public Sprite Frame;
-        public float CoolTime;
-        public float CoolTime2;
-        public Sprite Background;
-        public int Lv;
-        public string Description;
-       
+        public GameObject mySlot;
+        public TextMeshProUGUI Name;
+        public TextMeshProUGUI ID;
+        public TextMeshProUGUI grade;
+        public Image Icon;
+        public Image Frame;
+        public Image CoolTime;
+        public Image CoolTime2;
+        public Image Background;
+        public TextMeshProUGUI Lv;
+        public TextMeshProUGUI Description;
+        public Slider HPbar;
+        public Slider MPbar;
+        public Slider EXPvar;
+        public int Slotnum;
+        
+    }
+
+
+    public class Info
+    {
+        public GameObject myObject;
+        public TextMeshProUGUI Name;
+        public TextMeshProUGUI ID;
+        public TextMeshProUGUI grade;
+        public Image Icon;
+        public Image Frame;
+        public Image CoolTime;
+        public Image CoolTime2;
+        public Image Background;
+        public TextMeshProUGUI Lv;
+        public TextMeshProUGUI Description;
+        public Slider HPbar;
+        public Slider MPbar;
+        public Slider EXPvar;
     }
 
     public class UIController : MonoBehaviour
@@ -534,49 +476,88 @@ namespace RPGSYSTEM.UI
        
     }
 
-    public class UIModel : MonoBehaviour
+    public class UIModel : MonoBehaviour 
     {
         public Action UPdateUI;
-        public virtual object GetValue(string valueName, UIView.valueType valueType)
+        public UIController uIController;
+        
+       
+        public virtual void SetDragNDrop(ref UIView.DargNDorpEvent Ondrag, ref UIView.DargNDorpEvent drag, ref UIView.DargNDorpEvent offdrag, ref UIView.DargNDorpEvent drop)
         {
-            object obj = default;
+            Ondrag += OnDrag;
+            drag += Dragging;
+            offdrag += OffDrag;
+            drop += Drop;
+        }
 
+        protected virtual void OnDrag(PointerEventData eventData, int slotnum)
+        {
+
+        }
+
+        protected virtual void Dragging(PointerEventData eventData,int slotnum)
+        {
+
+        }
+
+        protected virtual void OffDrag(PointerEventData eventData, int slotnum)
+        {
+
+        }
+
+        protected virtual void Drop(PointerEventData eventData, int slotnum)
+        {
+
+        }
+
+        public virtual void SetSLot(string SlotListName, Slot slot)
+        {
+            Type type = this.GetType();
+            FieldInfo field = type.GetField(SlotListName, BindingFlags.Public | BindingFlags.Instance);
+
+            if (field != null)
+            {
+                List<Slot> slots = field.GetValue(this) as List<Slot>;
+
+                slots.Add(slot);
+
+                slots.OrderBy(slot => slot.Slotnum).ToList();
+            }
+
+        }
+
+        public virtual void SetInfo(string infoName, Info info)
+        {
+            Type type = this.GetType();
+            FieldInfo field = type.GetField(infoName, BindingFlags.Public | BindingFlags.Instance);
+            if (field != null)
+            {
+                field.SetValue(this, info);
+            }
+
+        }
+
+        public virtual void SetComponent<T>(T comopnent, string compoName, UIView.valueType valueType) where T: Component
+        {
             Type type = this.GetType();
             if ((int)valueType == 0)
             {
                 FieldInfo field = type.GetFields(BindingFlags.Public | BindingFlags.Instance)
-                                .FirstOrDefault(f => f.Name == valueName);
+                                .FirstOrDefault(f => f.Name == compoName);
 
-                obj = field.GetValue(this);
+                field.SetValue(this, comopnent);
+               
             }
             else
             {
                 PropertyInfo property = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                                        .FirstOrDefault(p => p.Name == valueName);
+                                        .FirstOrDefault(p => p.Name == compoName);
 
-                obj = property.GetValue(this);
-;            }
-            return obj;
-        }
-
-        public virtual Slot GetSlotList(string listName, int index)
-        {
-            Slot slot = default;
-
-            Type type = this.GetType();
-
-            FieldInfo field = type.GetField(listName, BindingFlags.Public | BindingFlags.Instance);
-
-            if(field != null)
-            {
-                List<Slot> slots = field.GetValue(this) as List<Slot>;
-
-                slot = slots[index];
+                property.SetValue(this, comopnent);
             }
-
-            return slot;
         }
 
+     
         public virtual void SetGameObject(GameObject gameObject, string fieldName, UIView.valueType valueType)
         {
             Type type = this.GetType();
@@ -596,12 +577,73 @@ namespace RPGSYSTEM.UI
             }
           
         }
+
+       
     }
-
-    
-
-    public class Info
+    public class UISlotModel : UIModel
     {
+        protected List<Slot> slots = new List<Slot>();
+        public Image dragImage;
+        protected int dragIndex;
+        protected GameObject canvas;
+        int BeforSlotNum;
+
+        protected virtual void Init()
+        {
+            dragImage.gameObject.SetActive(false);
+        }
+
+        protected override void OnDrag(PointerEventData eventData, int slotnum)
+        {
+            BeforSlotNum = slotnum;
+            dragImage.sprite = slots[BeforSlotNum].Icon.sprite;
+            dragImage.gameObject.transform.position = eventData.position;
+            dragImage.gameObject.SetActive(true);
+
+        }
+
+        protected override void Dragging(PointerEventData eventData, int slotnum)
+        {
+            dragImage.gameObject.transform.position = eventData.position;
+        }
+           
+
+        protected override void OffDrag(PointerEventData eventData, int slotnum)
+        {
+            dragImage.gameObject.SetActive(false);
+        }
+
+        protected override void Drop(PointerEventData eventData, int slotnum)
+        {
+            if(slotnum != BeforSlotNum)
+            {
+                slots[slotnum].Icon.sprite = dragImage.sprite;
+                ChageSLot();
+            }
+            else
+            {
+                return;
+            }
+        }
+
+        protected virtual void ChageSLot()
+        {
+            //드래그 앤 드롭으로 슬롯의 이미지가 빠져나갔을때 처리하는 함수.
+        }
+
+        public virtual void Setting()
+        {
+            //슬롯과 데이터 간에 연동하는 함수
+            // 데이터 수 만큼 세팅을 해주고, 데이터 수에 없는건? 디폴트로 해준다. 혹은 비활성화 한다.
+        }
+
+        public virtual void OnClick(int num)
+        {
+            //데이터[num]을 인포로 넘겨준다.(info에 함수 만들기)
+        }
+
 
     }
+
+
 }
