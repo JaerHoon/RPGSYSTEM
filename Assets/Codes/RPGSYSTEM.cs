@@ -38,32 +38,32 @@ namespace RPGSYSTEM
     }
 
    
-    public class CharacterManager : Managers<CharacterManager> 
+    public class CharacterManager<C,E,S> : Managers<CharacterManager<C,E,S>> 
     {
-        protected SkillManager skillManager;
+        protected SkillManager<C, E, S> skillManager;
 
-        [SerializeField]
-        protected List<CharacterData> characterDatas = new List<CharacterData>();
-        protected List<Character> characters = new List<Character>();
-        protected List<Character> ativeCharacters = new List<Character>();
-        protected Character[] inBattleCharacters = new Character[Nums.CharacterEquipCount];
+       
+        public List<C> characterDatas = new List<C>();
+        protected List<Character<C, E, S>> characters = new List<Character<C, E, S>>();
+        protected List<Character<C, E, S>> ativeCharacters = new List<Character<C, E, S>>();
+        protected Character<C, E, S>[] inBattleCharacters = new Character<C, E, S>[Nums.CharacterEquipCount];
 
         protected virtual void Init()
         {
             for (int i = 0; i < characterDatas.Count; i++)
             {
-                Character chars = new Character(characterDatas[i]);
+                Character<C, E, S> chars = new Character<C, E, S>(characterDatas[i]);
                 chars.InitSkill(skillManager.charaterskills[i]);
                 characters.Add(chars);
             }
         }
 
-        public virtual void GetCharacter(int characterNum)// ???????? ???????? ????????
+        public virtual void GetCharacter(int characterNum)
         {
             ativeCharacters.Add(characters[characterNum]);
         }
 
-        //???????? ???? ???? ?????? ?????????? ???? ????
+        
         public virtual void EquipCharacter(int slotnum, int characterNum)
         {   
             for(int i=0; i < inBattleCharacters.Length; i++)
@@ -82,41 +82,46 @@ namespace RPGSYSTEM
             }
         }
 
-        //?????? UI???? ????. ?????????? ?????? ?????????? ???? ????
-        public void EquipEquipment(int characterNum , Equipment equipment) 
+        
+        public void EquipEquipment(int characterNum , Equipment<C, E, S> equipment) 
         {
             characters[characterNum].OnEquip(equipment);
-            equipment.equipmentStat = Equipment.EquipmentStat.Equip;
+            equipment.equipmentStat = Equipment<C, E, S>.EquipmentStat.Equip;
         }
 
-        //?????????? ?????? ???????? ???? ????
-        public void RemoveEquipment(int characterNum, Equipment equipment)
+      
+        public void RemoveEquipment(int characterNum, Equipment<C, E, S> equipment)
         {
             characters[characterNum].RemoveEquipment((int)equipment.equipmentType);
-            equipment.equipmentStat = Equipment.EquipmentStat.Gain;
+            equipment.equipmentStat = Equipment<C, E, S>.EquipmentStat.Gain;
         }
 
-        // ?????? ???????????? ?????????? ???? ???????? ???????? ?????? ?????????? ????
-        public void LossEquipment(Equipment equipment)
+        
+        public void LossEquipment(Equipment<C, E, S> equipment)
         {
-            foreach(Character car in characters)
+            foreach(Character< C,E,S > car in characters)
             {
                 car.LossEquipment(equipment);
             }
         }
+
+        public void EquipSkill(int characterNum,int slotnum ,Skill<C,E,S> skill)
+        {
+            characters[characterNum].EquipSkill(slotnum, skill);
+        }
     }
 
-    public class Character
+    public class Character<C,E,S>
     {
-        protected CharacterData characterData; // ?????? ??????
-        protected int[] stats = new int[Nums.StatCount]; // ?????????? ????
-        protected int[] stats_Lv = new int[Nums.StatCount];//???? ???? ???? ???? ???? ??????
-        protected List<int>[] temp_stat = new List<int>[Nums.StatCount]; // ?????? ?????? ?????? ???????? ???? ???????? ???????? ????
-        protected int lv=1; //???????? ????
-        protected int maxLv = Nums.CharacterMaxLv; // ???????? ???? ???? ????
-        protected List<Skill> skills = new List<Skill>(); // ?????? ???? ????
-        protected Skill[] equipSkills = new Skill[Nums.SkillSetCount]; // ?????? ?????????? ?????? ???? ????
-        protected Equipment[] equipments = new Equipment[Nums.EquipmentCount]; // ?????? ?????? ?????? ???? ????
+        public C characterData;
+        protected int[] stats = new int[Nums.StatCount]; 
+        protected int[] stats_Lv = new int[Nums.StatCount];
+        protected List<int>[] temp_stat = new List<int>[Nums.StatCount]; //임시스탯 변화를 리스트로 관리
+        protected int lv=1; 
+        protected int maxLv = Nums.CharacterMaxLv; 
+        protected List<Skill<C, E, S>> skills = new List<Skill<C, E, S>>(); //캐릭터가 사용할 수 있는 모든 스킬
+        protected Skill<C, E, S>[] equipSkills = new Skill<C, E, S>[Nums.SkillSetCount]; // 장비하고 있는 스킬
+        protected Equipment<C, E, S>[] equipments = new Equipment<C, E, S>[Nums.EquipmentCount]; //장비하고 있는 아이템, 인벤토리는 따로 있음
 
         public int Lv
         {
@@ -138,7 +143,7 @@ namespace RPGSYSTEM
             }
         }
 
-        public Character(CharacterData data)
+        public Character(C data)
         {
             characterData = data;
             Init();
@@ -149,38 +154,38 @@ namespace RPGSYSTEM
 
         }
 
-        public void InitSkill(List<Skill> Characterskills)// ?????? ???? ???? ?????? ???????? ????
+        public void InitSkill(List<Skill<C, E, S>> Characterskills)
         {
             skills.AddRange(Characterskills);
         }
 
-        public virtual T GetStat<T>(int stat, bool Istemp) // stat ???????? ?? T?? ???????? ????
+        public virtual T GetStat<T>(int stat, bool Istemp) // 스탯계산해서 반환해주는 함수
         {
             int st = 0;
-            if(Istemp == true)// ??????????
+            if(Istemp == true)
             {
-               st = Cal.CalStat(stat, stats_Lv[stat], equipments, temp_stat);
+               st = Cal<C, E, S>.CalStat(stat, stats_Lv[stat], equipments, temp_stat);
             }
-            else//???????? ??????
+            else
             {
-                st = Cal.CalStat(stat, stats_Lv[stat], equipments);
+                st = Cal<C, E, S>.CalStat(stat, stats_Lv[stat], equipments);
             }
            
             return (T)Convert.ChangeType(st, typeof(T));
         }
 
-        public virtual void OnEquip(Equipment equipment)//???? ?????? ????????
+        public virtual void OnEquip(Equipment<C, E, S> equipment) // 장비장착 함수.
         {
             equipments[(int)equipment.equipmentType] = equipment;
         }
 
-        public virtual void RemoveEquipment(int slotnum)//???????????? ???? ????.
+        public virtual void RemoveEquipment(int slotnum) // 장비제거 함수.
         {
             equipments[slotnum] = null;
         }
 
-        //???????? ???????????? ?????????? ?????????????? ???? ???????? ????
-        public virtual void LossEquipment(Equipment equipment)
+      
+        public virtual void LossEquipment(Equipment<C, E, S> equipment) //장비 완전 제거 함수.
         {
             for(int i = 0; i < equipments.Length; i++)
             {
@@ -191,28 +196,28 @@ namespace RPGSYSTEM
             }
         }
 
-        public virtual void StatUP(int stat, int amount)// ?? ???? ???????? ???? ????
+        public virtual void StatUP(int stat, int amount)//영구적인 스탯 증가 int버전
         {
-            stats[stat] += Cal.CalStatUP(stats[stat], amount);
+            stats[stat] += Cal<C, E, S>.CalStatUP(stats[stat], amount);
         }
 
-        public virtual void StatUP(int stat, float amount)// ?? ???? ???????? ???? ???? ????????
+        public virtual void StatUP(int stat, float amount)//영구적인 스탯 증가 float버전 아마 %계산 때문일듯?
         {
-            stats[stat] += Cal.CalStatUP(stats[stat], amount); 
+            stats[stat] += Cal<C, E, S>.CalStatUP(stats[stat], amount); 
         }
 
-        public virtual void Temp_statUp(int stat, int amount)// ?????? ???????? ?????? ?????????? ????
+        public virtual void Temp_statUp(int stat, int amount)// 인트버전 임시 스탯 변화
         {
             temp_stat[stat].Add(amount);
            
         }
 
-        public virtual void Temp_statRestore(int stat, int amount)//???? ???? ???? ???????? ????.
+        public virtual void Temp_statRestore(int stat, int amount)// 인트버전 임시 스탯 회복..
         {
             temp_stat[stat].Remove(amount);
         }
 
-        public void Temp_Reset()//???? ???????? ?????? ???? ?????? ?????? ???????? ????
+        public void Temp_Reset()// 임시 스탯 변화 리셋.
         {
             for(int i = 0; i < temp_stat.Length; i++)
             {
@@ -220,28 +225,33 @@ namespace RPGSYSTEM
             }
         }
 
-        public virtual void EquipSkill(int slotnum,Skill skill)// ???? ???? ????
+        public virtual void EquipSkill(int slotnum,Skill<C, E, S> skill)//스킬 장착 함수.
         {
-            for(int i = 0; i < skills.Count; i++)
+            for(int i = 0; i < skills.Count; i++) // 다른 칸에 
             {
                 if(skills[i] = skill)
                 {
-                    equipSkills[slotnum] = skill;
+                    equipSkills[i] = null;
                 }
             }
+
+            equipSkills[slotnum] = skill;
         }
 
-
+        public virtual void RemoveSkill(int slotnum)
+        {
+            equipSkills[slotnum] = null;
+        }
 
     }
 
-    public class SkillManager : Managers<SkillManager>
+    public class SkillManager<C, E, S> : Managers<SkillManager<C, E, S>>
     {
         [SerializeField]
-        protected List<Skill> allSkills = new List<Skill>(); // ???? ???? ?????? ???????? ?????? ????
-        public List<List<Skill>> charaterskills = new List<List<Skill>>(); // ?? ?????????? ?????? ???????? ????
+        protected List<Skill<C, E, S>> allSkills = new List<Skill<C, E, S>>(); 
+        public List<List<Skill<C, E, S>>> charaterskills = new List<List<Skill<C, E, S>>>();
 
-        public virtual void ListingSkill()// ?? ???????????? ???????? ???? ???????? ???? ????
+        public virtual void ListingSkill()
         {
             for (int i = 0; i < allSkills.Count; i++)
             {
@@ -253,11 +263,11 @@ namespace RPGSYSTEM
         }
     }
 
-    public class Skill : MonoBehaviour 
+    public class Skill<C, E, S> : MonoBehaviour 
     {
-        protected SkillData skillData;
+        public S skillData;
         public Enums.SkillType skillType;
-        public int characterNum; // ?? ?????? ???? ?????? ????????
+        public int characterNum; 
         protected int skillLv=1;
         protected int maxSkillLv = Nums.SkillMaxLv;
         public int Skill_Lv
@@ -281,25 +291,25 @@ namespace RPGSYSTEM
 
         public virtual void OnSkill()
         {
-            //???????? ???????????? ?????? ?????? ??????????.
+           
         }
 
-        public virtual T GetSkillPow<T>()// ?????? ?????? ?????????? ?????????? ????
+        public virtual T GetSkillPow<T>()
         {
-            int a = Cal.CalSkillpow(skillData, skillLv);
+            int a = Cal<C, E, S>.CalSkillpow(skillData, skillLv);
 
             return (T)Convert.ChangeType(a, typeof(T));
         }
 
     }
 
-    public class EquipmentManager : Managers<EquipmentManager> 
+    public class EquipmentManage<C,E,S>: Managers<EquipmentManage<C, E, S>> 
     {
-        protected CharacterManager characterManager;
+        protected CharacterManager<C, E, S> characterManager;
         [SerializeField]
-        protected List<EquipmentData> equipmentDatas = new List<EquipmentData>();
-        public List<Equipment> equipments = new List<Equipment>();
-        public List<Equipment> gainedEquipment = new List<Equipment>();
+        protected List<E> equipmentDatas = new List<E>();
+        public List<Equipment<C, E, S>> equipments = new List<Equipment<C, E, S>>();
+        public List<Equipment<C, E, S>> gainedEquipment = new List<Equipment<C,E,S>>();
 
         
 
@@ -308,22 +318,18 @@ namespace RPGSYSTEM
             CreateEquipment();
         }
 
-        //?????????? ???????? ???????? ????.
-        //???????? equipment???????? ??????.
         protected virtual void CreateEquipment()
         {
-            //?????? ???????? ???????? ???? equipmentCount?? ????????.
+            
         }
 
-        public virtual void LossEquipment(Equipment equipment)
+        public virtual void LossEquipment(Equipment<C, E, S> equipment)
         {
             equipments.Remove(equipment);
         }
 
-        // ?????????? ?????? ???????? ????, ???????? ?????? ???? ?????? ?? ????
-        // ???? ???? ?????? ???????? ???????? ???? ?????? ???? equipments???? equipment?? ???????? ?????????? ????
-        // ?????? ?????????? ?????? ???? ???? ?????? ????.
-        public virtual void GetEquipment(Equipment equipment)
+        
+        public virtual void GetEquipment(Equipment<C, E, S> equipment)
         {
             if (gainedEquipment.Contains(equipment))
             {
@@ -336,8 +342,8 @@ namespace RPGSYSTEM
             
         }
 
-        //?????????? ???????????? ?????? ?????? ?? ???? ????. ?????????????? ?????? ???? ???????? ???? ??????.
-        public virtual void RemoveEquipment(Equipment equipment)
+      
+        public virtual void RemoveEquipment(Equipment<C, E, S> equipment)
         {
             if (gainedEquipment.Contains(equipment))
             {
@@ -357,9 +363,9 @@ namespace RPGSYSTEM
        
     }
 
-    public class Equipment
+    public class Equipment<C, E, S>
     {
-        EquipmentData equipmentdata;
+        E equipmentdata;
         public Enums.EquipmentType equipmentType;
         public enum EquipmentStat { Gain, Equip}
         public EquipmentStat equipmentStat;
@@ -388,7 +394,7 @@ namespace RPGSYSTEM
         public int[] statUp = new int[Nums.StatCount];
         public int equipmentCount;
 
-        public Equipment (EquipmentData data)
+        public Equipment (E data)
         {
             equipmentdata = data;
             Init();
@@ -402,7 +408,7 @@ namespace RPGSYSTEM
 
         public virtual int[] Cal_Pow() // ???????? ???????? ?? ???? ?????? ?????? ????
         {
-            int[] a = Cal.CalEquipments(this) ;
+            int[] a = Cal<C, E, S>.CalEquipments(this) ;
             return a;
         }
 
@@ -410,9 +416,9 @@ namespace RPGSYSTEM
 
     }
 
-    public class Cal
+    public class Cal<C,E,S>
     {
-        //???????? ?????? ???????? Int????
+       //캐릭터 스탯 업 int버전
         public static int CalStatUP(int origin, int amount)
         {
             int a = 0;
@@ -420,7 +426,7 @@ namespace RPGSYSTEM
             return a;
         }
 
-        //???????? ?????? ???????? Float????
+       //캐릭터 스탯 업 float버전 아마 %계산 때문일듯?
         public static int CalStatUP(int origin, float amount)
         {
             int a = 0;
@@ -429,8 +435,8 @@ namespace RPGSYSTEM
         }
 
 
-        //???????????? ???????? ???? ????
-        public static int CalStat(int stat, int Lv, Equipment[] equipments, List<int>[] tempstats)
+       //최종적으로 스탯을 계산해서 전투에 반영해줄 수 있게 반환해주는 함수.
+        public static int CalStat(int stat, int Lv, Equipment<C, E, S>[] equipments, List<int>[] tempstats)
         {
             int e = 0;
             int t = 0;
@@ -443,12 +449,12 @@ namespace RPGSYSTEM
                 t += tempstats[stat][i];
             }
 
-            int a = (stat*Lv) + e+t;// ????????+ ???? ???? + ????????, ???? ???? 
+            int a = (stat*Lv) + e+t;//(기본스탯*레벨)+장비스탯+ 임시스탯
             return a;
         }
 
-        // ???????? ???? ???? ???? ???? ??????
-        public static int CalStat(int stat, int Lv, Equipment[] equipments)
+        //UI에서 장비를 착용한 스탯을 확인할때 호출하는 함수
+        public static int CalStat(int stat, int Lv, Equipment<C, E, S>[] equipments)
         {
             int e = 0;
             for (int i = 0; i < equipments.Length; i++)
@@ -456,12 +462,12 @@ namespace RPGSYSTEM
                 e += equipments[i].Cal_Pow()[stat];
             }
           
-            int a = (stat * Lv) + e ;// ???????? + ???? ???? + ????????
+            int a = (stat * Lv) + e ;
             return a;
         }
 
-        // ???? ?????? ????????
-        public static int[] CalEquipments(Equipment equipment)
+        // 장비가 각 스탯에 어떤 영향을 미치는지 계산해서 int[]로 반환해주는 함수.
+        public static int[] CalEquipments(Equipment<C, E, S> equipment)
         {
             int[] a = new int[Nums.StatCount];
            for(int i=0; i < equipment.statUp.Length; i++)
@@ -471,8 +477,8 @@ namespace RPGSYSTEM
             return a;
         }
 
-        // ???? ???? ???? ????
-        public static int CalSkillpow(SkillData skillData, int Lv)
+        //스킬 파워 계산해주는 함수
+        public static int CalSkillpow(S skillData, int Lv)
         {
             int a = Lv;
 
@@ -517,9 +523,9 @@ namespace RPGSYSTEM
     public class Buff
     {
         public Enums.BuffDebuffType buffDebuffType;
-        public float duration;  // ????????
-        public float checkduration; // ?????? ???? ????
-        public int buffPow; //????????
+        public float duration;  // 버프 총 시간
+        public float checkduration; // 버프 중에 도트데미지를 위한 시간
+        public int buffPow;
        
         public Buff(float time, float checktime, int pow)
         {
@@ -566,6 +572,7 @@ namespace RPGSYSTEM
     public class Enums
     {
     
+        public enum SlotType { InventroySlot, EquipSlot}
         public enum EquipmentType { Weapon, Amor }
         public enum SkillType { Ation,Passive,Condtion, BuffDebuff}
 
@@ -597,11 +604,11 @@ namespace RPGSYSTEM
 
     
 
-    public class DataManager : Managers<DataManager>
+    public class DataManager<C,E,S> : Managers<DataManager<C, E, S>>
     {
-        public List<CharacterData> characterDatas = new List<CharacterData>();
-        public List<SkillData> skilldatas = new List<SkillData>();
-        public List<EquipmentData> equipmentDatas = new List<EquipmentData>();
+        public List<C> characterDatas = new List<C>();
+        public List<E> skilldatas = new List<E>();
+        public List<S> equipmentDatas = new List<S>();
 
         public virtual void InIt()
         {

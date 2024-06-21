@@ -5,9 +5,9 @@ using RPGSYSTEM;
 
 namespace RPGSYSTEM.PlayableCharacter
 {
-    public class PlayableCharacter : MonoBehaviour
+    public class PlayableCharacter<C,E,S> : MonoBehaviour
     {
-        protected Character myCharacter;
+        protected  Character<C, E, S>  myCharacter;
         protected int HP;
 
         public virtual void Init()
@@ -40,20 +40,20 @@ namespace RPGSYSTEM.PlayableCharacter
 
         }
 
-        public virtual void OnSkill(Skill skill)
+        public virtual void OnSkill(Skill<C, E, S> skill)
         {
 
         }
     }
 
-    public class CharacterSkill : MonoBehaviour
+    public class CharacterSkill<C, E, S> : MonoBehaviour
     {
         public List<IAtionSkill> ative_AtionSkills = new List<IAtionSkill>();
         public List<IPassiveSkill> ative_PassiveSkills = new List<IPassiveSkill>();
         public List<IConditionSkill> ative_ConditionSkills = new List<IConditionSkill>();
         public List<IBuffDebuffSkill> ative_BuffDeffSkills = new List<IBuffDebuffSkill>();
 
-        public virtual void OnSkill(Skill skill)
+        public virtual void OnSkill(Skill<C, E, S> skill)
         {
             skill.OnSkill();
             switch (skill.skillType)

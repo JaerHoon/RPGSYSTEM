@@ -210,8 +210,10 @@ namespace RPGSYSTEM.UI
         }
         void Slot(Type type)
         {
+            UI.slotType = (Enums.SlotType)EditorGUILayout.EnumPopup("SlotType", UI.slotType);
+
             string[] listName = type.GetFields(BindingFlags.Public | BindingFlags.Instance)
-                              .Where(fi => fi.FieldType == typeof(List<Slot>))
+                              .Where(fi => fi.FieldType.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>) || fi.FieldType.IsArray)
                               .Select(fi => fi.Name).ToArray();
 
             if (listName.Length > 0)
@@ -254,7 +256,7 @@ namespace RPGSYSTEM.UI
     public class UIView : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
     {
         public Enums.UIType uIType;
-       
+        public Enums.SlotType slotType; 
         public enum valueType { Field, Property }
         [HideInInspector]
         public valueType value1_type;
@@ -272,8 +274,7 @@ namespace RPGSYSTEM.UI
 
         [HideInInspector]
         public int SlotNumber;
-        [HideInInspector]
-        public Slot slot;
+       
         [HideInInspector]
         public Info info;
 
@@ -288,12 +289,12 @@ namespace RPGSYSTEM.UI
         public DargNDorpEvent Drop;
 
 
-        protected void Init()
+        protected virtual void Init()
         {
             SetComopnent(uIType);
         }
 
-        protected void SetComopnent(Enums.UIType uIType)
+        protected virtual void SetComopnent(Enums.UIType uIType)
         {
             switch (uIType)
             {
@@ -310,13 +311,11 @@ namespace RPGSYSTEM.UI
                     Set<Slider>(slider);
                     break;
                 case Enums.UIType.GameObject: SetGameObject(); break;
-                case Enums.UIType.Slot: SetSlot(); break;
                 case Enums.UIType.Info: SetInfo(); break;
                 case Enums.UIType.DragNDrop: SetDragNDrop(); break;
                
             }
 
-          
         }
         protected virtual void SetDragNDrop()
         {
@@ -359,38 +358,7 @@ namespace RPGSYSTEM.UI
         }
 
 
-        protected virtual void SetSlot()
-        {
-            slot = new Slot();
-            slot.Slotnum = SlotNumber;
-            slot.mySlot = this.gameObject;
-
-            List<UIComponent> SlotComponent = Utility.FindAllComponentsInChildren<UIComponent>(this.gameObject.transform);
-            for(int i = 0; i < SlotComponent.Count; i++)
-            {
-                switch (SlotComponent[i].componentType)
-                {
-                    case UIComponent.UI_Component.Icon: SlotComponent[i].TryGetComponent<Image>(out slot.Icon); break;
-                    case UIComponent.UI_Component.Frame: SlotComponent[i].TryGetComponent<Image>(out slot.Frame); break;
-                    case UIComponent.UI_Component.CoolTime1: SlotComponent[i].TryGetComponent<Image>(out slot.CoolTime); break;
-                    case UIComponent.UI_Component.CoolTime2: SlotComponent[i].TryGetComponent<Image>(out slot.CoolTime2); break;
-                    case UIComponent.UI_Component.Background: SlotComponent[i].TryGetComponent<Image>(out slot.Background); break;
-
-                    case UIComponent.UI_Component.Description: SlotComponent[i].TryGetComponent<TextMeshProUGUI>(out slot.Description); break;
-                    case UIComponent.UI_Component.Name: SlotComponent[i].TryGetComponent<TextMeshProUGUI>(out slot.Name); break;
-                    case UIComponent.UI_Component.ID: SlotComponent[i].TryGetComponent<TextMeshProUGUI>(out slot.ID); break;
-                    case UIComponent.UI_Component.Lv: SlotComponent[i].TryGetComponent<TextMeshProUGUI>(out slot.Lv); break;
-                    case UIComponent.UI_Component.Grade: SlotComponent[i].TryGetComponent<TextMeshProUGUI>(out slot.grade); break;
-
-                    case UIComponent.UI_Component.HPbar: SlotComponent[i].TryGetComponent<Slider>(out slot.HPbar); break;
-                    case UIComponent.UI_Component.MPbar: SlotComponent[i].TryGetComponent<Slider>(out slot.MPbar); break;
-                    case UIComponent.UI_Component.EXPbar:SlotComponent[i].TryGetComponent<Slider>(out slot.EXPvar); break;
-
-                }
-            }
-
-            uIModel.SetSLot(ValueName, slot);
-        }
+       
 
         protected virtual void SetInfo()
         {
@@ -426,13 +394,67 @@ namespace RPGSYSTEM.UI
        
     }
 
+    public class SlotUIView<T> : UIView 
+    {
+        [HideInInspector]
+        public Slot<T> slot;
+
+        protected override void Init()
+        {
+            uIType = Enums.UIType.Slot;
+            base.Init();
+        }
+
+        protected override void SetComopnent(Enums.UIType uIType)
+        {
+            SetSlot();
+        }
+
+        protected virtual void SetSlot()
+        {
+            slot = new Slot<T>();
+            slot.Slotnum = SlotNumber;
+            slot.slotType = this.slotType;
+            slot.mySlot = this.gameObject;
+
+            List<UIComponent> SlotComponent = Utility.FindAllComponentsInChildren<UIComponent>(this.gameObject.transform);
+            for (int i = 0; i < SlotComponent.Count; i++)
+            {
+                switch (SlotComponent[i].componentType)
+                {
+                    case UIComponent.UI_Component.Icon: SlotComponent[i].TryGetComponent<Image>(out slot.Icon); break;
+                    case UIComponent.UI_Component.Frame: SlotComponent[i].TryGetComponent<Image>(out slot.Frame); break;
+                    case UIComponent.UI_Component.CoolTime1: SlotComponent[i].TryGetComponent<Image>(out slot.CoolTime); break;
+                    case UIComponent.UI_Component.CoolTime2: SlotComponent[i].TryGetComponent<Image>(out slot.CoolTime2); break;
+                    case UIComponent.UI_Component.Background: SlotComponent[i].TryGetComponent<Image>(out slot.Background); break;
+
+                    case UIComponent.UI_Component.Description: SlotComponent[i].TryGetComponent<TextMeshProUGUI>(out slot.Description); break;
+                    case UIComponent.UI_Component.Name: SlotComponent[i].TryGetComponent<TextMeshProUGUI>(out slot.Name); break;
+                    case UIComponent.UI_Component.ID: SlotComponent[i].TryGetComponent<TextMeshProUGUI>(out slot.ID); break;
+                    case UIComponent.UI_Component.Lv: SlotComponent[i].TryGetComponent<TextMeshProUGUI>(out slot.Lv); break;
+                    case UIComponent.UI_Component.Grade: SlotComponent[i].TryGetComponent<TextMeshProUGUI>(out slot.grade); break;
+
+                    case UIComponent.UI_Component.HPbar: SlotComponent[i].TryGetComponent<Slider>(out slot.HPbar); break;
+                    case UIComponent.UI_Component.MPbar: SlotComponent[i].TryGetComponent<Slider>(out slot.MPbar); break;
+                    case UIComponent.UI_Component.EXPbar: SlotComponent[i].TryGetComponent<Slider>(out slot.EXPvar); break;
+
+                }
+            }
+
+            UISlotModel<T> uISlotModel = uIModel as UISlotModel<T>;
+            uISlotModel.SetSLot(ValueName, slot);
+        }
+    }
+
     public class UIComponent : MonoBehaviour
     {
         public enum UI_Component { Name, ID, Icon, Frame, Lv, CoolTime1, CoolTime2, Description, Background, Grade, HPbar, MPbar, EXPbar }
         public UI_Component componentType;
     }
-    public class Slot
+    public class Slot<T>
     {
+        T data;
+        public Enums.SlotType slotType;
         public GameObject mySlot;
         public TextMeshProUGUI Name;
         public TextMeshProUGUI ID;
@@ -473,6 +495,14 @@ namespace RPGSYSTEM.UI
     public class UIController : MonoBehaviour
     {
        public List<UIModel> uIMoels = new List<UIModel>();
+
+        public virtual void Init()
+        {
+            foreach(UIModel Model in uIMoels)
+            {
+                Model.uIController = this;
+            }
+        }
        
     }
 
@@ -510,22 +540,7 @@ namespace RPGSYSTEM.UI
 
         }
 
-        public virtual void SetSLot(string SlotListName, Slot slot)
-        {
-            Type type = this.GetType();
-            FieldInfo field = type.GetField(SlotListName, BindingFlags.Public | BindingFlags.Instance);
-
-            if (field != null)
-            {
-                List<Slot> slots = field.GetValue(this) as List<Slot>;
-
-                slots.Add(slot);
-
-                slots.OrderBy(slot => slot.Slotnum).ToList();
-            }
-
-        }
-
+     
         public virtual void SetInfo(string infoName, Info info)
         {
             Type type = this.GetType();
@@ -580,9 +595,11 @@ namespace RPGSYSTEM.UI
 
        
     }
-    public class UISlotModel : UIModel
+    public class UISlotModel<T> : UIModel //T는 클래스 Equipment, Skill,Quest, Character등...
     {
-        protected List<Slot> slots = new List<Slot>();
+        protected List<T> datas = new List<T>();
+        protected List<Slot<T>> inventroyslots = new List<Slot<T>>();
+        protected List<Slot<T>> equipSlots = new List<Slot<T>>();
         public Image dragImage;
         protected int dragIndex;
         protected GameObject canvas;
@@ -593,10 +610,30 @@ namespace RPGSYSTEM.UI
             dragImage.gameObject.SetActive(false);
         }
 
+        public virtual void DataSetting(List<T> data)
+        {
+            datas.AddRange(data);
+        }
+
+        public virtual void SetSLot(string SlotListName, Slot<T> slot)
+        {
+            Type type = this.GetType();
+            FieldInfo field = type.GetField(SlotListName, BindingFlags.Public | BindingFlags.Instance);
+
+            if (field != null)
+            {
+                List<Slot<T>> slots = field.GetValue(this) as List<Slot<T>>;
+
+                slots.Add(slot);
+
+                slots.OrderBy(slot => slot.Slotnum).ToList();
+            }
+        }
+
         protected override void OnDrag(PointerEventData eventData, int slotnum)
         {
             BeforSlotNum = slotnum;
-            dragImage.sprite = slots[BeforSlotNum].Icon.sprite;
+            dragImage.sprite = inventroyslots[BeforSlotNum].Icon.sprite;
             dragImage.gameObject.transform.position = eventData.position;
             dragImage.gameObject.SetActive(true);
 
@@ -617,7 +654,7 @@ namespace RPGSYSTEM.UI
         {
             if(slotnum != BeforSlotNum)
             {
-                slots[slotnum].Icon.sprite = dragImage.sprite;
+                inventroyslots[slotnum].Icon.sprite = dragImage.sprite;
                 ChageSLot();
             }
             else
