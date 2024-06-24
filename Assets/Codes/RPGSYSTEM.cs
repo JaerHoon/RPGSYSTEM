@@ -42,6 +42,7 @@ namespace RPGSYSTEM
     {
         protected SkillManager<C, E, S> skillManager;
 
+        protected List<Data> chardata = new List<Data>();
        
         public List<C> characterDatas = new List<C>();
         protected List<Character<C, E, S>> characters = new List<Character<C, E, S>>();
@@ -402,11 +403,11 @@ namespace RPGSYSTEM
 
         protected void Init()
         {
-            //equipmentdata?? equmentType?? ?????? this.equipmentType?? ??????????.
+           
         }
 
 
-        public virtual int[] Cal_Pow() // ???????? ???????? ?? ???? ?????? ?????? ????
+        public virtual int[] Cal_Pow() 
         {
             int[] a = Cal<C, E, S>.CalEquipments(this) ;
             return a;
@@ -587,20 +588,25 @@ namespace RPGSYSTEM
         public enum Grade { Normal, Rere, Unipe, Legend }
     }
 
+    public class Data
+    {
+        
+    }
 
-    public abstract class CharacterData { }
+    public abstract class CharacterData : Data { }
     
 
     
 
-    public abstract class SkillData { }
+    public abstract class SkillData : Data { }
+
+
+
+
+    public abstract class EquipmentData : Data { }
     
 
-    
-
-    public abstract class EquipmentData { }
-    
-    public abstract class BuffDebuffData { }
+    public abstract class BuffDebuffData : Data { }
 
     
 
@@ -642,7 +648,7 @@ namespace RPGSYSTEM
             return enumList;
         }
 
-        public static List<T> FindAllComponentsInChildren<T>(Transform parent) where T : Component
+        public static List<T> FindAllComponentsInChildren<T>(Transform parent) where T : class
         {
             List<T> components = new List<T>();
 
