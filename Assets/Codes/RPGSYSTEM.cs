@@ -670,7 +670,32 @@ namespace RPGSYSTEM
 
             return components;
         }
+
+        public static T FindComponentInParent<T>(Transform transform) where T : class
+        {
+            // 현재 게임 오브젝트의 부모를 추적합니다.
+            Transform currentTransform = transform;
+
+            while (currentTransform != null)
+            {
+                // 현재 부모에서 컴포넌트를 찾습니다.
+                T component = currentTransform.GetComponent<T>();
+                if (component != null)
+                {
+                    // 컴포넌트를 찾은 경우 반환합니다.
+                    return component;
+                }
+
+                // 부모가 없으면 null을 반환합니다.
+                currentTransform = currentTransform.parent;
+            }
+
+            // 모든 부모를 탐색했지만 컴포넌트를 찾지 못한 경우 null을 반환합니다.
+            return null;
+        }
     }
+
+ 
 
 }
 

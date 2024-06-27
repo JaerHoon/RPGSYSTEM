@@ -14,7 +14,7 @@ public class NewBoard : MonoBehaviour
 
     public virtual void SetBoardComponent()
     {
-        //사실은 모든 자식을 검사해야함.
+
         List<Components> myComponents = Utility.FindAllComponentsInChildren<Components>(this.transform)
                                         .Where(co => co.hierarchyType == Components.HierarchyType.BoardInfo).ToList();
 
@@ -37,27 +37,55 @@ public class NewBoard : MonoBehaviour
             }
         }
     }
+
+    public virtual void SetSlots(SlotGroup slotGroup)
+    {
+
+    }
+
+    public virtual void SetSlotGroups(SlotGroup slotGroup)
+    {
+
+    }
 }
 
 public class SlotBoard<T> : NewBoard
 {
-    public virtual void SetSlots()//예는 스타트에서 불러야 할듯?
+    public List<SlotGroup> slotGroups = new List<SlotGroup>();
+   
+    public virtual void Init()
     {
-        SlotGroup slotGroups = GetComponentInChildren<SlotGroup>();
-        List<ViewElement> viewElements = slotGroups.GetSlotcomponents();
+        if (slotGroups.Count > 0)
+        {
+            for(int i = 0; i < slotGroups.Count; i++)
+            {
+                slotGroups[i].SetSlots();
+                SetSlots(slotGroups[i]);
+            }
+        }
+        else
+        {
+            Debug.Log("슬롯그룹이 없습니다");
+        }
+    }
+
+    public override void SetSlots(SlotGroup slotGroup)
+    {
+        //슬롯<T> 리스트가 여러개 일 수 있다.(예를 들어 EquipSlot이랑 invenSlot이랑.. 
+        //그래서 상속받아서 사용할때 만들었는데 그 리스틀 채우기 위해서 타입을 사용했음.
+        List<ViewElement> viewElements = slotGroup.GetSlotcomponents();
 
         Type type = this.GetType();
-        FieldInfo field = type.GetField(slotGroups.listName, BindingFlags.Public | BindingFlags.Instance);
+        FieldInfo field = type.GetField(slotGroup.listName, BindingFlags.Public | BindingFlags.Instance);
 
         if (field != null)
         {
-            var fieldValue = field.GetValue(this) as List<Slot<T>>;
+            List<Slot<T>> fieldValue = field.GetValue(this) as List<Slot<T>>;
 
             if (fieldValue != null)
-            {
+            {   
                 fieldValue.Clear(); // 기존 리스트 초기화
-                fieldValue.Capacity = viewElements.Count; // 리스트 용량 설정
-
+               
                 for (int i = 0; i < viewElements.Count; i++)
                 {
                     Slot<T> slot = new Slot<T>();
@@ -65,9 +93,18 @@ public class SlotBoard<T> : NewBoard
                     fieldValue.Add(slot);
                 }
             }
-        }
 
+        }
     }
+
+    public override void SetSlotGroups(SlotGroup slotGroup)
+    {
+        if (!slotGroups.Contains(slotGroup))
+        {
+            slotGroups.Add(slotGroup);
+        }
+    }
+    
 
     public virtual void SetSlotData(T data)
     {
@@ -98,9 +135,19 @@ public class Components : MonoBehaviour
     [HideInInspector]
     public SlotView slot;
     [HideInInspector]
+    public string listName;
+    [HideInInspector]
     public string KeyName;
     [HideInInspector]
     public int SlotIndex;
+
+    public void SetParents(SlotView slotView)
+    {
+        board = slotView.myBoard;
+        slot = slotView;
+        SlotIndex = slotView.SlotIndex;
+    }
+        
 }
 
 [CustomEditor(typeof(Components), true)]
@@ -119,27 +166,57 @@ public class ComponentsViewEditor : Editor
 
         if (components.hierarchyType == Components.HierarchyType.Slot)
         {
-            EditorGUI.BeginDisabledGroup(true);
-            EditorGUILayout.IntField("SlotIndex", components.SlotIndex);
-            EditorGUI.EndDisabledGroup();
+            SlotView slotView = Utility.FindComponentInParent<SlotView>(components.transform);
 
-            if (components.board != null)
+            if(slotView != null)
             {
-                Type type = components.board.GetType();
+                components.SetParents(slotView);
 
-                string[] fieldNames = type.GetFields(BindingFlags.Public | BindingFlags.Instance)
-                                    .Where(fi => fi.FieldType.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>) || fi.FieldType.IsArray)
-                                    .Select(fi => fi.Name).ToArray();
+                EditorGUI.BeginDisabledGroup(true);
+                EditorGUILayout.IntField("SlotIndex", components.SlotIndex);
+                EditorGUI.EndDisabledGroup();
 
-                if(fieldNames.Length > 0)
+                if (components.board != null)
                 {
-                    int index = Array.IndexOf(fieldNames, components.KeyName);
-                    if (index == -1) index = 0;
-                    index = EditorGUILayout.Popup("KeyName", index ,fieldNames);
+                    EditorGUI.BeginDisabledGroup(true);
+                    EditorGUILayout.TextField("BoardName", components.board.name);
+                    EditorGUI.EndDisabledGroup();
 
-                    components.KeyName = fieldNames[index];
+                    Type type = components.board.GetType();
+
+                    string[] fieldNames = type.GetFields(BindingFlags.Public | BindingFlags.Instance)
+                                        .Where(fi => fi.FieldType.IsArray)
+                                        .Select(fi => fi.Name).ToArray();
+
+                    if (fieldNames.Length > 0)
+                    {
+                        int index = Array.IndexOf(fieldNames, components.listName);
+                        if (index == -1) index = 0;
+                        index = EditorGUILayout.Popup("FieldArray", index, fieldNames);
+
+                        components.listName = fieldNames[index];
+
+                        FieldInfo fieldInfo = type.GetField(fieldNames[index]);
+
+                        if (fieldInfo != null)
+                        {
+                            var obj = fieldInfo.GetValue(components.board);
+                            string[] fields = obj as string[];
+
+                            if (fields.Length > 0)
+                            {
+                                int index2 = Array.IndexOf(fields, components.KeyName);
+                                if (index2 == -1) index2 = 0;
+                                index2 = EditorGUILayout.Popup("KeyName", index2, fields);
+
+                                components.KeyName = fields[index2];
+                            }
+                        }
+                    }
                 }
             }
+
+           
         }
 
         if (GUI.changed)
@@ -156,10 +233,16 @@ public class SlotGroup : MonoBehaviour
     public NewBoard board;
     [HideInInspector]
     public string listName;
-    List<SlotView> slots = new List<SlotView>();
+    public List<SlotView> slots = new List<SlotView>();
+
 
     public List<ViewElement> GetSlotcomponents()
     {
+        for (int i = 0; i < slots.Count; i++)
+        {
+            slots[i].GetSlotComponent();
+        }
+
         List<ViewElement> slotsComponents = new List<ViewElement>();
         foreach(SlotView slot in slots)
         {
@@ -172,10 +255,17 @@ public class SlotGroup : MonoBehaviour
 
     public virtual void SetSlots()
     {
+        slots.Clear();
         for(int i=0; i < transform.childCount; i++)
         {
-            SlotView slot = transform.GetChild(i).gameObject.AddComponent<SlotView>();
+            SlotView slot = transform.GetChild(i).GetComponent<SlotView>();
+            if(slot == null)
+            {
+                slot = transform.GetChild(i).gameObject.AddComponent<SlotView>();
+            }
+
             slot.myBoard = board;
+            slot.SlotIndex = i;
             slots.Add(slot);
         }
 
@@ -193,14 +283,40 @@ public class SlotGroupEditor : Editor
     {
         slotGroup = (SlotGroup)target;
 
-        slotGroup.board = (NewBoard)EditorGUILayout.ObjectField("Board", slotGroup.board, typeof(NewBoard), true);
+        slotGroup.board = Utility.FindComponentInParent<NewBoard>(slotGroup.transform);
+
+        EditorGUI.BeginDisabledGroup(true);
+        EditorGUILayout.TextField("BoardName", slotGroup.board.name);
+        EditorGUI.EndDisabledGroup();
+
+        slotGroup.board.SetSlotGroups(slotGroup);
 
         if (slotGroup.board != null)
         {
             if (GUILayout.Button("SetSlots"))
             {
                 slotGroup.SetSlots();
+
             }
+
+            Type type = slotGroup.board.GetType();
+
+            
+            string[] listNames = type.GetFields(BindingFlags.Public | BindingFlags.Instance)
+                            .Where(fi => fi.FieldType.IsGenericType && fi.FieldType.GetGenericTypeDefinition() == typeof(List<>) || fi.FieldType.IsArray)
+                            .Select(fi => fi.Name).ToArray();
+
+            if (listNames.Length > 0)
+            {
+                int index = Array.IndexOf(listNames, slotGroup.listName);
+                if (index == -1) index = 0;
+                index = EditorGUILayout.Popup("ListName", index, listNames);
+
+                slotGroup.listName = listNames[index];
+            }
+
+        
+
         }
 
       
@@ -220,22 +336,15 @@ public class SlotView : MonoBehaviour
     public ViewElement SlotComponents = new ViewElement();
     public int SlotIndex;
     List<Components> components = new List<Components>();
-   
-    public virtual void SetSlotComponent()
-    {
-        components = Utility.FindAllComponentsInChildren<Components>(this.transform)
-                                     .Where(co => co.hierarchyType == Components.HierarchyType.Slot).ToList();
-
-        foreach (Components com in components)
-        {
-            com.slot = this;
-            com.board = myBoard;
-            com.SlotIndex = SlotIndex;
-        }
-    }
+  
   
     public virtual void GetSlotComponent()
     {
+        components = Utility.FindAllComponentsInChildren<Components>(this.transform)
+                                    .Where(co => co.hierarchyType == Components.HierarchyType.Slot).ToList();
+        SlotComponents.ImageComponents.Clear();
+        SlotComponents.sliderComponent.Clear();
+        SlotComponents.textComopnent.Clear();
         foreach (Components com in components)
         {
            
@@ -271,10 +380,11 @@ public class SlotViewEditor : Editor
 
         slot.SlotIndex = EditorGUILayout.IntField("SlotIdex", slot.SlotIndex);
 
-        if (GUILayout.Button("SetComponent"))
-        {
-            slot.SetSlotComponent();
-        }
+        EditorGUI.BeginDisabledGroup(true);
+        EditorGUILayout.TextField("BoardName", slot.myBoard.name);
+        EditorGUI.EndDisabledGroup();
+
+      
 
         if (GUI.changed)
         {
@@ -380,5 +490,30 @@ public class Utility
 
         return components;
     }
+    public static T FindComponentInParent<T>(Transform transform) where T : class
+    {
+        // 현재 게임 오브젝트의 부모를 추적합니다.
+        Transform currentTransform = transform;
+
+        while (currentTransform != null)
+        {
+            // 현재 부모에서 컴포넌트를 찾습니다.
+            T component = currentTransform.GetComponent<T>();
+            if (component != null)
+            {
+                // 컴포넌트를 찾은 경우 반환합니다.
+                return component;
+            }
+
+            // 부모가 없으면 null을 반환합니다.
+            currentTransform = currentTransform.parent;
+        }
+
+        // 모든 부모를 탐색했지만 컴포넌트를 찾지 못한 경우 null을 반환합니다.
+        return null;
+    }
 }
+
+
+
 
